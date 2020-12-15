@@ -12,3 +12,11 @@ todo list：
 - [ ] 功能索引模块
 - [ ] 插件配置化
 
+环境
+
+```sh
+#此选项会安装最新的nonebot2,开发环境为2.0.0a6
+pip install nonebot2
+pip install requests Beautifulsoup4 lxml
+```
+
