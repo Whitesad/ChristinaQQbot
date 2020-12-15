@@ -1,12 +1,14 @@
 from nonebot import on_command
 from nonebot.rule import to_me
 from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
+
 import random
 import requests
 import lxml
 from  bs4 import BeautifulSoup
 import json
 import os
+import platform
 
 from christinaqqbot.utils.rule import _gruop_white_list
 
@@ -30,7 +32,12 @@ async def _(bot: Bot, event: Event, state: dict)->None:
     try:
         pic_name=save_pic(waifu_url)
         try:
-            pic_file=os.getcwd()+'\pic\\'+pic_name
+            sys = platform.system()
+            pic_file=''
+            if sys == "Windows":
+                pic_file=os.getcwd()+'\pic\\'+pic_name
+            elif sys == "Linux":
+                pic_file=os.getcwd()+'/pic/'+pic_name
             reply+=MessageSegment.image(file='file:///'+pic_file)
             await bot.send_group_msg(group_id=event.group_id,message=reply)
         finally:

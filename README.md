@@ -15,7 +15,7 @@ todo list：
 环境
 
 ```sh
-#此选项会安装最新的nonebot2,开发环境为2.0.0a6
+#此选项会安装最新的nonebot2,开发环境为2.0.0a7 go-cqhttpv0.9.34
 pip install nonebot2
 pip install requests Beautifulsoup4 lxml
 ```

@@ -12,6 +12,7 @@ import os
 import asyncio
 import threading
 import time
+import platform
 
 from christinaqqbot.utils.reply import *
 from christinaqqbot.utils.rule import  _gruop_white_list
@@ -155,8 +156,13 @@ def setu_thread(bot:Bot,event:Event,args:dict):
             return
         pic_name=save_pic(setu['urls']['original'])
         try:
-            pic_file=os.getcwd()+'\pic\\'+pic_name
-
+            sys = platform.system()
+            pic_file=''
+            if sys == "Windows":
+                pic_file=os.getcwd()+'\pic\\'+pic_name
+            elif sys == "Linux":
+                pic_file=os.getcwd()+'/pic/'+pic_name
+            
             pic_id="P站id:"+str(setu['id'])
             pic_tag="关键词"+args['key_word']
             if(args['mode']=='xml'):
