@@ -8,8 +8,9 @@ from  bs4 import BeautifulSoup
 import json
 import os
 
+from christinaqqbot.utils.rule import _gruop_white_list
 
-waifu=on_command('waifu',rule=to_me())
+waifu=on_command('waifu',rule=to_me()&_gruop_white_list)
 
 def save_pic(pic_url):
     pic_name=pic_url.split('/')[-1]

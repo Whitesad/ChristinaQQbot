@@ -2,8 +2,8 @@ from nonebot import on_message
 from nonebot import on_command
 from nonebot import on_notice
 from nonebot.rule import to_me
-from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
-
+from nonebot.adapters.cqhttp import Bot,Event
+from nonebot.adapters.cqhttp import MessageSegment as msg
 
 import requests
 import json
@@ -14,24 +14,46 @@ import threading
 import time
 
 from christinaqqbot.utils.reply import *
-
+from christinaqqbot.utils.rule import  _gruop_white_list
 
 emoji_image='34a6d4bbd65b0c8903c9fed1f12e9792.image'
 emoji_image2='3674633fb2a753be08cf09d3b2045d71.image'
 
 api_url='https://api.imjad.cn/pixiv/v2/'
 
-gruop_white_list={
-    '男酮之家':822022036,
-    'MC上流':983204066,
-    'test bot':965768002,
-    'BIT-fellow':1070578282
-    # 'gal':196452038
-}
+
+setu_tags=['萝莉','黑丝','白丝','魅魔','吸血鬼','白毛','FGO','arknights','原神','碧蓝航线','百合','红瞳','舰队Collection','JK']
+api_url='https://pix.ipv4.host/illustrations'
+def get_setu(tag='random')->dict:
+    page=random.randint(1,6)
+    if(tag=='random'):
+        tag=get_random_reply(setu_tags)
+        page=random.randint(1,21)
+    para={
+        'keyword':tag,
+        'pageSize':'20',
+        'searchType':'origin',
+        'illustType':'illust',
+        'page':str(page)
+    }
+    try:
+        r=requests.get(url=api_url,params=para)
+    except Exception:
+        raise Exception
+    
+    result_dict=json.loads(r.text)
+    if('data' in result_dict.keys()):
+        result=result_dict['data'][random.randint(0,20)]
+        return {
+            'title':result['title'],
+            'id':result['id'],
+            'artistId':result['artistId'],
+            'urls':result['imageUrls'][0]
+        }
+    else:
+        return None
 
 
-
-setu_tags=['萝莉','黑丝','白丝','巨乳','魅魔','吸血鬼','白毛','FGO','arknights','原神','碧蓝航线','百合','FATE','红瞳']
 search_tags=[' 50users入り',' 100users入り',' 500users入り',' 1000users入り',' 5000users入り']
 def get_random_setu(key_word):
     setu_tag=get_random_reply(setu_tags)
@@ -94,8 +116,7 @@ def get_random_setu(key_word):
     return random_setu
 
 
-def save_pic(pic):
-    pic_url=pic['image_urls']['medium']
+def save_pic(pic_url):
     # data={'type':'rank','content':'male','mode':'daily','per_page':'10','page':1}
     headers = {
         'Referer': 'https://app-api.pixiv.net/'
@@ -118,50 +139,70 @@ setu_msg=[
     'setu'
     ]
 
-def setu_thread(bot:Bot,event:Event,key_word):
-    if(key_word=='random'):
-        reply=MessageSegment.reply(id_=event.id)+'正在随机生成图片中，请等待...\r\n生成时间越久图片质量越高'
-        asyncio.run(bot.send_msg(group_id=event.group_id,message=reply))
-    else :
-        reply=MessageSegment.reply(id_=event.id)+'正在依据关键词：'+key_word+' 生成图片中，请等待...\r\n生成时间越久图片质量越高'
-        asyncio.run(bot.send_msg(group_id=event.group_id,message=reply))
-
-    start=time.time()
+def setu_thread(bot:Bot,event:Event,args:dict):
+    # if(key_word=='random'):
+    #     # reply=msg.reply(id_=event.id)+'正在随机生成图片中，请等待...\r\n生成时间越久图片质量越高'
+    #     # asyncio.run(bot.send_msg(group_id=event.group_id,message=reply))
+    #     pass
+    # else:
+    #     reply=msg.reply(id_=event.id)+'正在依据关键词：'+key_word+' 生成图片中，请等待...\r\n生成时间越久图片质量越高'
+    #     asyncio.run(bot.send_msg(group_id=event.group_id,message=reply))
     try:
-        setu=get_random_setu(key_word=key_word)
+        setu=get_setu(tag=args['key_word'])
         if(setu==None):
-            None_reply=MessageSegment.reply(id_=event.id)+'淦哦老兄，你的xp真**怪！建议重新搜或者换个xp！'
+            None_reply=msg.reply(id_=event.id)+'淦哦老兄，你的xp真**怪！建议重新搜或者换个xp！'
             asyncio.run(bot.send_msg(group_id=event.group_id,message=None_reply))
             return
-        pic_name=save_pic(setu)
+        pic_name=save_pic(setu['urls']['original'])
         try:
             pic_file=os.getcwd()+'\pic\\'+pic_name
 
             pic_id="P站id:"+str(setu['id'])
-            pic_time="time:"+"%.1f"%(time.time()-start)+'s'
-            setu_reply=MessageSegment.reply(id_=event.id)+MessageSegment.image(file='file:///'+pic_file)+pic_id+'\r\n'+pic_time
-            asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
+            pic_tag="关键词"+args['key_word']
+            if(args['mode']=='xml'):
+                setu_reply='[CQ:cardimage,file='+'file:///'+pic_file+',source='+pic_id+' '+pic_tag+']'
+                asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
+            elif(args['mode']=='pic'):
+                setu_reply=msg.reply(id_=event.id)+msg.image(file='file:///'+pic_file)+pic_id+'\r\n'+pic_tag
+                asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
         finally:
             os.remove(pic_file)
     except Exception:
-        error_reply=MessageSegment.reply(id_=event.id)+'你的涩图炸了，你可以尝试再来一张。'
+        error_reply=msg.reply(id_=event.id)+'你的涩图炸了，你可以尝试再来一张。'
         asyncio.run(bot.send_msg(group_id=event.group_id,message=error_reply))
 
-pixiv=on_message(rule=to_me())
+pixiv=on_command('setu',rule=to_me()&_gruop_white_list)
 @pixiv.handle()
 async def handle_setu(bot: Bot, event: Event, state: dict):
-    if event.detail_type=='group':
-        is_setu=False
-        for key_msg in setu_msg:
-            if(key_msg in event.raw_message):
-                is_setu=True
-                break
-        key_word='random'
-        if(is_setu):
-            msg_list=event.raw_message.split()
-            if(msg_list[-1]in setu_msg and len(msg_list)==3):
-                key_word=msg_list[-2]
+    args_list = str(event.message).strip().split()
+    opt=['-s','-m','--help']
+    args={
+        'key_word':'random',
+        'mode':'xml'
+    }
+    for arg in args_list:
+        if(arg[:1]=='-'and arg not in opt):
+            await pixiv.finish(msg.reply(id_=event.id)+'你输入的{}有误，请输入--help获得命令帮助'.format(arg))
+    if('--help'in args_list):
+        await  pixiv.finish(msg.reply(id_=event.id)+'-m:设置回复模式，xml/pic\r\n-s:搜索关键词，置空则为随机')
 
-        if(event.group_id in gruop_white_list.values() and is_setu):
-            threading.Thread(target=setu_thread,args=(bot,event,key_word)).start()
+    if('-s'in args_list):
+        if(args_list.index('-s')!=len(args_list)-1):
+            if(args_list[args_list.index('-s')+1]not in opt):
+                args['key_word']=args_list[args_list.index('-s')+1]
+            else:
+                await  pixiv.finish(msg.reply(id_=event.id)+'你所输入的-s搜索参数有误！搜索参数应该为不带空格的单词，语言不定。')
+        else:
+            await  pixiv.finish(msg.reply(id_=event.id)+'你所输入的-s搜索参数有误！搜索参数应该为不带空格的单词，语言不定。')
+    if('-m'in args_list):
+        if(args_list.index('-m')!=len(args_list)-1):
+            if(args_list[args_list.index('-m')+1] in ['xml','pic']):
+                args['mode']=args_list[args_list.index('-m')+1]            
+            else:
+                await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送，默认选项\r\npic:以小图形式发送")
+        else:
+            await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送，默认选项\r\npic:以小图形式发送")
+    
+    await pixiv.send(msg.reply(id_=event.id)+"你的涩图正在处理，依据关键词{}".format(args['key_word']))
+    threading.Thread(target=setu_thread,args=(bot,event,args)).start()
 
