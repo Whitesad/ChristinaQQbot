@@ -43,7 +43,7 @@ reply=[
 
 @pokehah.handle()
 async def _poke(bot: Bot, event: Event, state: dict) -> None:
-    if(event.detail_type=='notify'):
+    if(event.detail_type=='notify'and event.raw_event['target_id']==event.raw_event['self_id']):
         msg = get_random_reply(reply)
 
         await bot.send_msg(group_id=event.group_id,message=msg)
