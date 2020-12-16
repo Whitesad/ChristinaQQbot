@@ -40,7 +40,7 @@ def get_setu(tag='random')->dict:
     try:
         r=requests.get(url=api_url,params=para)
     except Exception:
-        raise Exception
+        raise Exception("setu api访问错误！\r\n你的涩图炸了，你可以尝试再来一张。")
     
     result_dict=json.loads(r.text)
     if('data' in result_dict.keys()):
@@ -55,68 +55,6 @@ def get_setu(tag='random')->dict:
         return None
 
 
-search_tags=[' 50users入り',' 100users入り',' 500users入り',' 1000users入り',' 5000users入り']
-def get_random_setu(key_word):
-    setu_tag=get_random_reply(setu_tags)
-    search_tag=get_random_reply(search_tags)
-    if(key_word!='random'):
-        setu_tag=key_word
-    random_pages=random.sample(range(1,11),10)
-    front_page=999999
-    url_dict={}
-    for page in random_pages:
-        if(page>front_page):
-            continue
-        params={
-            'type':'search',
-            'word':setu_tag+search_tag,
-            'mode':'partial_match_for_tags',
-            'order':'date_desc',
-            'page':str(page)
-        }
-        # params={
-        #         'type':'rank',
-        #         'mode':'day_male',
-        #         'page':str(page)
-        # }
-        # ConnectionError
-        try:
-            r=requests.get(url=api_url,params=params)
-        except Exception:
-            raise Exception
-
-        url_dict=json.loads(r.text)
-        if('error' in url_dict.keys()):
-            front_page=page
-            continue
-        elif(len(url_dict['illusts'])<=0):
-            front_page=page
-            continue
-        else:
-            break
-
-    if('error' in url_dict.keys()):
-        return None
-    url_list=url_dict['illusts']
-    if(len(url_list)==0):
-        return None
-    no_r18_list=[]
-    limit_tag=['R-18G','R-18']
-    for url in url_list:
-        is_r18=False
-        for tag in url['tags']:
-            if(tag['name']in limit_tag):
-                is_r18=True
-                break
-        if(not is_r18):
-            no_r18_list.append(url)
-    if(len(no_r18_list)<=0):
-        return None
-    random_setu_list=random.sample(range(0,len(no_r18_list)),len(no_r18_list))
-    random_setu=no_r18_list[random_setu_list[random.randint(0,len(random_setu_list)-1)]]
-    return random_setu
-
-
 def save_pic(pic_url):
     # data={'type':'rank','content':'male','mode':'daily','per_page':'10','page':1}
     headers = {
@@ -126,71 +64,93 @@ def save_pic(pic_url):
     try:
         r=requests.get(url=pic_url,headers=headers)
     except Exception:
-        raise Exception
+        raise Exception("服务器转存图片错误！\r\n你的涩图炸了，你可以尝试再来一张。")
     with open('./pic/'+pic_name,'wb')as f:
         f.write(r.content)
         f.close()
     return pic_name
 
 
-setu_msg=[
-    '[CQ:image,file=3674633fb2a753be08cf09d3b2045d71.image]',
-    '色图',
-    '涩图',
-    'setu'
-    ]
-
 def setu_thread(bot:Bot,event:Event,args:dict):
-    # if(key_word=='random'):
-    #     # reply=msg.reply(id_=event.id)+'正在随机生成图片中，请等待...\r\n生成时间越久图片质量越高'
-    #     # asyncio.run(bot.send_msg(group_id=event.group_id,message=reply))
-    #     pass
-    # else:
-    #     reply=msg.reply(id_=event.id)+'正在依据关键词：'+key_word+' 生成图片中，请等待...\r\n生成时间越久图片质量越高'
-    #     asyncio.run(bot.send_msg(group_id=event.group_id,message=reply))
     try:
+        # 三个debug模式下用来计时的变量
+        setu_time=time.time()
+        save_time=time.time()
+        send_time=time.time()
+
+        # 获取setu url
         setu=get_setu(tag=args['key_word'])
+        setu_time=time.time()-setu_time
+
         if(setu==None):
             None_reply=msg.reply(id_=event.id)+'淦哦老兄，你的xp真**怪！建议重新搜或者换个xp！'
-            asyncio.run(bot.send_msg(group_id=event.group_id,message=None_reply))
-            return
-        pic_name=save_pic(setu['urls']['original'])
-        try:
-            sys = platform.system()
-            pic_file=''
-            if sys == "Windows":
-                pic_file=os.getcwd()+'\pic\\'+pic_name
-            elif sys == "Linux":
-                pic_file=os.getcwd()+'/pic/'+pic_name
-            
-            pic_id="P站id:"+str(setu['id'])
-            pic_tag="关键词"+args['key_word']
-            if(args['mode']=='xml'):
-                setu_reply='[CQ:cardimage,file='+'file:///'+pic_file+',source='+pic_id+' '+pic_tag+']'
-                asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
-            elif(args['mode']=='pic'):
-                setu_reply=msg.reply(id_=event.id)+msg.image(file='file:///'+pic_file)+pic_id+'\r\n'+pic_tag
-                asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
-        finally:
-            os.remove(pic_file)
-    except Exception:
-        error_reply=msg.reply(id_=event.id)+'你的涩图炸了，你可以尝试再来一张。'
+            try:
+                asyncio.run(bot.send_msg(group_id=event.group_id,message=None_reply))
+            except Exception:
+                raise Exception('发送回复消息失败！')
+        else:
+            # 储存setu到本地
+            save_time=time.time()
+            pic_name=save_pic(setu['urls']['original'])
+            save_time=time.time()-save_time
+
+            try:
+                sys = platform.system()
+                pic_file=''
+                if sys == "Windows":
+                    pic_file=os.getcwd()+'\pic\\'+pic_name
+                elif sys == "Linux":
+                    pic_file=os.getcwd()+'/pic/'+pic_name
+                
+                pic_id="P站id:"+str(setu['id'])
+                pic_tag="关键词"+args['key_word']
+                send_time=time.time()
+                
+                if(args['mode']=='xml'):
+                    setu_reply='[CQ:cardimage,file='+'file:///'+pic_file+',source='+pic_id+' '+pic_tag+']'
+                    try:
+                        asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
+                    except Exception:
+                        raise Exception('发送pic涩图消息失败！')
+                elif(args['mode']=='pic'):
+                    setu_reply=msg.reply(id_=event.id)+msg.image(file='file:///'+pic_file)+pic_id+'\r\n'+pic_tag
+                    try:
+                        asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
+                    except Exception:
+                        raise Exception('发送xml涩图消息失败！')
+                
+
+                send_time=time.time()-send_time
+            finally:
+                os.remove(pic_file)
+        if(args['debug']):
+            try:
+                reply=msg.reply(id_=event.id)+"api request时间:{:.2f}s\r\npic request时间:{:.2f}s\r\nsend message时间{:.2f}s".format(setu_time,save_time,send_time)
+                asyncio.run(bot.send_msg(group_id=event.group_id,message=reply))
+            except Exception:
+                raise Exception('发送debug消息失败！')
+
+    except Exception as e:
+        error_reply=msg.reply(id_=event.id)+'info:{}'.format(e.args[0])
         asyncio.run(bot.send_msg(group_id=event.group_id,message=error_reply))
 
 pixiv=on_command('setu',rule=to_me()&_gruop_white_list)
 @pixiv.handle()
 async def handle_setu(bot: Bot, event: Event, state: dict):
     args_list = str(event.message).strip().split()
-    opt=['-s','-m','--help']
+    opt=['-s','-m','--help','--debug']
     args={
         'key_word':'random',
-        'mode':'xml'
+        'mode':'pic',
+        'debug':False
     }
     for arg in args_list:
         if(arg[:1]=='-'and arg not in opt):
             await pixiv.finish(msg.reply(id_=event.id)+'你输入的{}有误，请输入--help获得命令帮助'.format(arg))
+    if('--debug'in args_list):
+        args['debug']=True
     if('--help'in args_list):
-        await  pixiv.finish(msg.reply(id_=event.id)+'-m:设置回复模式，xml/pic\r\n-s:搜索关键词，置空则为随机')
+        await  pixiv.finish(msg.reply(id_=event.id)+'-m:设置回复模式，xml/pic\r\n-s:搜索关键词，置空则为随机\r\n--debug:开启debug模式，打印更多信息')
 
     if('-s'in args_list):
         if(args_list.index('-s')!=len(args_list)-1):
@@ -205,7 +165,7 @@ async def handle_setu(bot: Bot, event: Event, state: dict):
             if(args_list[args_list.index('-m')+1] in ['xml','pic']):
                 args['mode']=args_list[args_list.index('-m')+1]            
             else:
-                await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送，默认选项\r\npic:以小图形式发送")
+                await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送\r\npic:以小图形式发送，默认选项\r\n")
         else:
             await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送，默认选项\r\npic:以小图形式发送")
     
