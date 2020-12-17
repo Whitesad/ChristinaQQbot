@@ -111,13 +111,13 @@ def setu_thread(bot:Bot,event:Event,args:dict):
                     try:
                         asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
                     except Exception:
-                        raise Exception('发送pic涩图消息失败！')
+                        raise Exception('发送xml涩图消息失败！')
                 elif(args['mode']=='pic'):
                     setu_reply=msg.reply(id_=event.id)+msg.image(file='file:///'+pic_file)+pic_id+'\r\n'+pic_tag
                     try:
                         asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
                     except Exception:
-                        raise Exception('发送xml涩图消息失败！')
+                        raise Exception('发送pic涩图消息失败！')
                 
 
                 send_time=time.time()-send_time
@@ -167,7 +167,7 @@ async def handle_setu(bot: Bot, event: Event, state: dict):
             else:
                 await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送\r\npic:以小图形式发送，默认选项\r\n")
         else:
-            await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送，默认选项\r\npic:以小图形式发送")
+            await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送\r\npic:以小图形式发送，默认选项")
     
     await pixiv.send(msg.reply(id_=event.id)+"你的涩图正在处理，依据关键词{}".format(args['key_word']))
     threading.Thread(target=setu_thread,args=(bot,event,args)).start()
