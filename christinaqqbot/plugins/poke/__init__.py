@@ -3,7 +3,9 @@ from nonebot.rule import to_me
 from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
 
 from christinaqqbot.utils.reply import *
+
 import os
+import platform
 
 # 戳 一 戳
 
@@ -47,7 +49,12 @@ async def _poke(bot: Bot, event: Event, state: dict) -> None:
     if(event.detail_type=='notify'and event.raw_event['target_id']==event.raw_event['self_id']):
         files=os.listdir('./voice')
         voice_name=get_random_reply(files)
-        voice_file=os.getcwd()+'\\voice\\'+voice_name
+
+        sys = platform.system()
+        if sys == "Windows":
+            voice_file=os.getcwd()+'\\voice\\'+voice_name
+        elif sys == "Linux":
+            voice_file=os.getcwd()+'/voice/'+voice_name
         voice_reply=MessageSegment.record(file='file:///'+voice_file)
 
         text=voice_name.split('_')[2]
