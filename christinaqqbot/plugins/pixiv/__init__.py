@@ -17,9 +17,6 @@ import platform
 from christinaqqbot.utils.reply import *
 from christinaqqbot.utils.rule import  _gruop_white_list
 
-emoji_image='34a6d4bbd65b0c8903c9fed1f12e9792.image'
-emoji_image2='3674633fb2a753be08cf09d3b2045d71.image'
-
 api_url='https://api.imjad.cn/pixiv/v2/'
 
 
@@ -44,7 +41,7 @@ def get_setu(tag='random')->dict:
     
     result_dict=json.loads(r.text)
     if('data' in result_dict.keys()):
-        result=result_dict['data'][random.randint(0,20)]
+        result=result_dict['data'][random.randint(0,len(result_dict['data']))]
         return {
             'title':result['title'],
             'id':result['id'],
@@ -55,19 +52,27 @@ def get_setu(tag='random')->dict:
         return None
 
 
-def save_pic(pic_url):
-    # data={'type':'rank','content':'male','mode':'daily','per_page':'10','page':1}
-    headers = {
-        'Referer': 'https://app-api.pixiv.net/'
-    }
-    pic_name=pic_url.split('/')[-1]
+def save_setu(id):
+    pic_url='https://pixiv.cat/%s.jpg'%id
     try:
-        r=requests.get(url=pic_url,headers=headers)
+        r=requests.get(url=pic_url)
+        if(r.status_code==404):
+            if('需要指定'in r.text):
+                pic_url='https://pixiv.cat/%s-1.jpg'%id
+                r=requests.get(url=pic_url)
+            else:
+                raise Exception("服务器转存遇到无法转存的图片！\r\n你的涩图炸了，你可以尝试再来一张。")
     except Exception:
-        raise Exception("服务器转存图片错误！\r\n你的涩图炸了，你可以尝试再来一张。")
-    with open('./pic/'+pic_name,'wb')as f:
-        f.write(r.content)
-        f.close()
+        raise Exception("服务器转存请求图片错误！\r\n你的涩图炸了，你可以尝试再来一张。")
+    try:
+        pic_name=pic_url.split('/')[-1]
+        if(not os.path.exists('./pic')):
+            os.mkdir('./pic')
+        with open('./pic/'+pic_name,'wb')as f:
+            f.write(r.content)
+            f.close()
+    except Exception:
+        raise Exception("服务器转存储存图片错误！\r\n你的涩图炸了，你可以尝试再来一张。")
     return pic_name
 
 
@@ -91,7 +96,7 @@ def setu_thread(bot:Bot,event:Event,args:dict):
         else:
             # 储存setu到本地
             save_time=time.time()
-            pic_name=save_pic(setu['urls']['original'])
+            pic_name=save_setu(setu['id'])
             save_time=time.time()-save_time
 
             try:
