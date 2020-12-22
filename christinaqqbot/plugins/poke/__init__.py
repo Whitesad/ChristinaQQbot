@@ -3,9 +3,9 @@ from nonebot.rule import to_me
 from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
 
 from christinaqqbot.utils.reply import *
+import os
 
 # 戳 一 戳
-pokehah = on_notice()
 
 poke_reply=[
         "lsp你再戳？","连个bot都要戳的肥宅真恶心啊。",
@@ -41,9 +41,20 @@ reply=[
     '就算不能总想起来也好，就算100次里只有1次也罢，希望你能想起我，因为那里有着我，1％的墙壁的对面，我一定存在着！冈部…冈部…冈部…',
 ]
 
-@pokehah.handle()
+poke = on_notice()
+@poke.handle()
 async def _poke(bot: Bot, event: Event, state: dict) -> None:
     if(event.detail_type=='notify'and event.raw_event['target_id']==event.raw_event['self_id']):
-        msg = get_random_reply(reply)
+        files=os.listdir('./voice')
+        voice_name=get_random_reply(files)
+        voice_file=os.getcwd()+'\\voice\\'+voice_name
+        voice_reply=MessageSegment.record(file='file:///'+voice_file)
 
-        await bot.send_msg(group_id=event.group_id,message=msg)
+        text=voice_name.split('_')[2]
+
+        # test_file='file:///D:\\Projects\\QQbot\\ChristinaQQbot\\voice\\t.amr'
+        # test_reply=MessageSegment.record(file=test_file,magic=0)
+        # await bot.send_msg(group_id=event.group_id,message=test_reply)
+
+        await bot.send_msg(group_id=event.group_id,message=voice_reply)
+        await bot.send_msg(group_id=event.group_id,message=text)

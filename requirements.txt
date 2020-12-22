@@ -1,0 +1,5 @@
+nonebot2==2.0.0a7
+requests
+Beautifulsoup4
+lxml
+feedparser
