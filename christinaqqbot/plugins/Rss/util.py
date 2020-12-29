@@ -2,6 +2,39 @@
 import sqlite3
 import os
 
+class Rss:
+    def __init__(self,
+            name,
+            url:str,
+            user_id:int,
+            type:str,
+            group_id:int
+    ):
+        self.name=name
+        self.url=url
+        self.user_id=user_id
+        self.type=type
+        self.group_id=group_id
+
+
+def add_rss(rss:Rss):
+    connect=sqlite3.connect('./db/rss.db')
+    cursor=connect.cursor()
+
+    sql='INSERT INTO subscribe (rss_name,rss_url,subscriber,subscriber_group_id,subscribe_type) \
+        VALUES ("{rss_name}","{rss_url}",{subscriber},{subscriber_group_id},"{subscribe_type}");'.format(
+            rss_name=rss.name,
+            rss_url=rss.url,
+            subscriber=rss.user_id,
+            subscriber_group_id=rss.group_id,
+            subscribe_type=rss.type
+        )
+    print(sql)
+    cursor.execute(sql)
+    connect.commit()
+
+    cursor.close()
+    connect.close()
 
 def rss_db_init():
     if(not os.path.exists('./db')):
