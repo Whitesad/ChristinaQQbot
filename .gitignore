@@ -5,3 +5,5 @@ test.py
 pic/*
 db/*
 *.db
+.vscode/*
+*.json

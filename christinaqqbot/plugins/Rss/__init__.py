@@ -28,4 +28,6 @@ async def _handle(bot: Bot, event: Event, state: dict):
             rss.describe=des
             add_rss(rss)
             await update_rss(rss,mode='init')
-            await  RSS.finish('RSS添加成功')
+            await RSS.finish('RSS {rss_name} 添加成功\r\nrss简介：{describe}'.format(rss_name=rss_name,describe=des))
+    else:
+        await RSS.finish('RSS输入格式有误！\r\n请使用/rss rss名称 rssurl 进行添加')

@@ -99,15 +99,20 @@ def get_all_rss():
     return rss_list
 
 def rss_server():
+    print('rss进程开启！')
     loop=asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
     while True:
         rss_list=get_all_rss()
         if(len(rss_list)>=1):
-            tasks=[update_rss(rss=rss,mode='update') for rss in rss_list]
-            loop.run_until_complete(asyncio.gather(*tasks))
-        time.sleep(30)
+            try:
+                tasks=[update_rss(rss=rss,mode='update') for rss in rss_list]
+                loop.run_until_complete(asyncio.gather(*tasks))
+                print('成功更新rss')
+                time.sleep(30)
+            except Exception:
+                print('更新rss错误!')
 
 def add_rss(rss:Rss)->str:
     connect=sqlite3.connect('./db/rss.db')
