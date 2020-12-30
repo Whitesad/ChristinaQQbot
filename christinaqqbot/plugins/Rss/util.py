@@ -111,8 +111,9 @@ def rss_server():
                 loop.run_until_complete(asyncio.gather(*tasks))
                 print('成功更新rss')
                 time.sleep(30)
-            except Exception:
-                print('更新rss错误!')
+            except Exception as e:
+                print('更新rss错误!info:%s'%e.args[0])
+                time.sleep(1)
 
 def add_rss(rss:Rss)->str:
     connect=sqlite3.connect('./db/rss.db')
