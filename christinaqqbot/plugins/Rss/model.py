@@ -1,12 +1,13 @@
-
 class Rss:
     def __init__(self,
-            name:str,
-            url:str,
-            user_id:int,
-            type:str,
-            group_id:int,
-            id=-1
+            name='',
+            url='',
+            user_id=-1,
+            type='',
+            group_id=-1,
+            id=-1,
+            describe='',
+            activate=True
     ):
         self.id=id
         self.name=name
@@ -14,17 +15,17 @@ class Rss:
         self.user_id=user_id
         self.type=type
         self.group_id=group_id
+        self.describe=describe
+        self.activate=activate
 
 class Item:
     def __init__(self,
-            rss_name:str,
             rss_id:str,
             title:str,
             link:str,
             id=-1
     ):
         self.id=id
-        self.rss_name=rss_name
         self.rss_id=rss_id
         self.title=title
         self.link=link

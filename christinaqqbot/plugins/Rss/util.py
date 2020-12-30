@@ -1,3 +1,6 @@
+from nonebot.adapters.cqhttp import Bot
+from nonebot import get_bots
+from nonebot.adapters.cqhttp import MessageSegment as msg
 
 import sqlite3
 import os
@@ -5,26 +8,40 @@ import feedparser
 import asyncio
 import time
 
-from .util import Rss,Item
+from .model import Rss,Item
 
-def check_rss(rss:Rss)->bool:
+def check_rss(rss_url:str)->str:
+    try:
+        r=feedparser.parse(rss_url)
+        if('entries' in r.keys()):
+            return r['feed']['subtitle']
+        else:
+            return ''
+    except Exception:
+        return ''
+
+async def update_rss(rss:Rss,mode='init'):
+    coonect = sqlite3.connect('./db/rss.db')
+    cursor=coonect.cursor()
+    if(mode=='init'):
+        results=cursor.execute('SELECT * FROM rss WHERE rss_url="{rss_url}"'.format(rss_url=rss.url))
+        results=[result for result in results]
+        rss.id=results[0][0]
+
     r=feedparser.parse(rss.url)
-    new_items=[Item(rss_name=rss.name,
-                    rss_id=rss.id,
+    new_items=[Item(rss_id=rss.id,
                     title=item['title'],
-                    link=item['link']) 
+                    link=item['link']
+                    )
                     for item in r['entries']]
 
     # 与存储在数据库中的item进行比较，查看是否有更新
-    coonect = sqlite3.connect('./db/rss.db')
-    cursor=coonect.cursor()
     sql='SELECT * FROM items WHERE rss_id={rss_id}'.format(rss_id=rss.id)
     results=cursor.execute(sql)
     old_items=[Item(id=item[0],
                     rss_id=item[1],
-                    rss_name=item[2],
-                    title=item[3],
-                    link=item[4]) 
+                    title=item[2],
+                    link=item[3]) 
                     for item in results]
 
     update_items=[]
@@ -37,37 +54,60 @@ def check_rss(rss:Rss)->bool:
         if(is_update):
             update_items.append(new_item)
     
-
+    if(len(update_items)>=1):
+        for item in update_items:
+            sql='INSERT INTO items (rss_id,title,link) VALUES({rss_id},"{title}","{link}");'.format(
+                rss_id=item.rss_id,
+                title=item.title,
+                link=item.link
+            )
+            cursor.execute(sql)
+        coonect.commit()
+        if(mode=='update'):
+            bots = get_bots()
+            bot=None
+            for id in bots.keys():
+                bot=bots[id]
+            subscribres=cursor.execute('SELECT * FROM subscribe WHERE rss_id={rss_id}'.format(rss_id=rss.id))
+            for update in update_items:
+                for subscribre in subscribres:
+                    reply=msg.at(user_id=subscribre[1])
+                    reply=reply+'您所订阅的{rss_name}更新了\r\ntitle:{title}\r\nurl:{url}'.format(
+                        rss_name=subscribre[5],
+                        title= update.title,
+                        url=update.link
+                    )
+                    await bot.send_group_msg(group_id=subscribre[2],message=reply)
+            
     cursor.close()
     coonect.close()
 
-    return True
 
 def get_all_rss():
     coonect = sqlite3.connect('./db/rss.db')
     cursor=coonect.cursor()
 
-    sql='SELECT * FROM subscribe'
+    sql='SELECT * FROM rss'
     rss_results=cursor.execute(sql)
     rss_list=[]
     for rss in rss_results:
-        rss=Rss(id=rss[0],name=rss[1],url=rss[2],user_id=rss[3],group_id=rss[4],type=rss[5])
+        rss=Rss(id=rss[0],url=rss[1],activate=rss[2])
         rss_list.append(rss)
 
     cursor.close()
     coonect.close()
     return rss_list
 
-
 def rss_server():
-    rss_list=get_all_rss()
     loop=asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
     while True:
-        loop.run_until_complete(asyncio.gather([check_rss(rss) for rss in rss_list]))
+        rss_list=get_all_rss()
+        if(len(rss_list)>=1):
+            tasks=[update_rss(rss=rss,mode='update') for rss in rss_list]
+            loop.run_until_complete(asyncio.gather(*tasks))
         time.sleep(30)
-
 
 def add_rss(rss:Rss)->str:
     connect=sqlite3.connect('./db/rss.db')
@@ -99,8 +139,9 @@ def add_rss(rss:Rss)->str:
             return 'exist'
 
     # 该源还未被添加，则添加该源
-    sql='INSERT INTO rss (rss_url,activate) VALUES ("{rss_url}",{activate});'.format(
+    sql='INSERT INTO rss (rss_url,describe,activate) VALUES ("{rss_url}","{describe}",{activate});'.format(
         rss_url=rss.url,
+        describe=rss.describe,
         activate=1
     )
     cursor.execute(sql)
@@ -160,6 +201,7 @@ def rss_db_init():
         CREATE TABLE rss(
             rss_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ,
             rss_url TEXT NOT NULL,
+            describe TEXT NOT NULL,
             activate BOOLEAN DEFAULT 1
             );
         ''')
@@ -172,52 +214,12 @@ def rss_db_init():
         CREATE TABLE items(
             item_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             rss_id INT NOT NULL,
-            rss_name TEXT NOT NULL,
             title TEXT NOT NULL,
             link TEXT NOT NULL
             );
         ''')
         print('建立items表')
         connect.commit()
-
-    cursor.close()
-    connect.close()
-
-    if(not os.path.exists('./db')):
-        os.mkdir('./db')
-    # 建立数据库
-    connect=sqlite3.connect('./db/rss.db')
-    cursor=connect.cursor()
-
-    tables=cursor.execute('SELECT name FROM sqlite_master WHERE type="table" ORDER BY name;')
-    exist_subscribe,exist_items=False,False
-    for table in tables:
-        if(table[0]=='subscribe'):
-            exist_subscribe=True
-        elif(table[0]=='items'):
-            exist_items=True
-    if(not exist_subscribe):
-        # 建立订阅信息表
-        # rss_name：rss的名称，rss_url：订阅链接,subscriber：订阅者，subscriber_group_id：在哪个群里订阅
-        cursor.execute('''
-        CREATE TABLE subscribe(
-            ID INT PRIMARY KEY NOT NULL,
-            rss_name TEXT NOT NULL,
-            rss_url TEXT NOT NULL,
-            subscriber INT NOT NULL,
-            subscriber_group_id INT NOT NULL
-            );
-        ''')
-    if(not exist_items):
-        # 建立订阅信息items表
-        # rss_name：订阅名称,items：rss的item
-        cursor.execute('''
-        CREATE TABLE items(
-            ID INT PRIMARY KEY NOT NULL,
-            rss_name TEXT NOT NULL,
-            items TEXT NOT NULL
-            );
-        ''')
 
     cursor.close()
     connect.close()

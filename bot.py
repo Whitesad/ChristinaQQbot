@@ -20,10 +20,10 @@ driver.register_adapter("cqhttp", CQHTTPBot)
 app = nonebot.get_asgi()
 
 nonebot.load_builtin_plugins()
-nonebot.load_plugin("christinaqqbot.plugins.pixiv")
-nonebot.load_plugin("christinaqqbot.plugins.poke")
-nonebot.load_plugin("christinaqqbot.plugins.waifu")
-# nonebot.load_plugin("christinaqqbot.plugins.Rss")
+# nonebot.load_plugin("christinaqqbot.plugins.pixiv")
+# nonebot.load_plugin("christinaqqbot.plugins.poke")
+# nonebot.load_plugin("christinaqqbot.plugins.waifu")
+nonebot.load_plugin("christinaqqbot.plugins.Rss")
 # nonebot.load_plugin("christinaqqbot.plugins.QQcmd")
 
 # Modify some config / config depends on loaded configs
