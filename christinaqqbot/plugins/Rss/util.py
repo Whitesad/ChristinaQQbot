@@ -21,96 +21,104 @@ def check_rss(rss_url:str)->str:
         return ''
 
 async def update_rss(rss:Rss,mode='init'):
-    coonect = sqlite3.connect('./db/rss.db')
-    cursor=coonect.cursor()
-    if(mode=='init'):
-        results=cursor.execute('SELECT * FROM rss WHERE rss_url="{rss_url}"'.format(rss_url=rss.url))
-        results=[result for result in results]
-        rss.id=results[0][0]
+    try:
+        connect = sqlite3.connect('./db/rss.db')
+        cursor=connect.cursor()
+        if(mode=='init'):
+            results=cursor.execute('SELECT * FROM rss WHERE rss_url="{rss_url}"'.format(rss_url=rss.url))
+            results=[result for result in results]
+            rss.id=results[0][0]
 
-    r=feedparser.parse(rss.url)
-    new_items=[Item(rss_id=rss.id,
-                    title=item['title'],
-                    link=item['link']
-                    )
-                    for item in r['entries']]
+        r=feedparser.parse(rss.url)
+        new_items=[Item(rss_id=rss.id,
+                        title=item['title'],
+                        link=item['link']
+                        )
+                        for item in r['entries']]
 
-    # 与存储在数据库中的item进行比较，查看是否有更新
-    sql='SELECT * FROM items WHERE rss_id={rss_id}'.format(rss_id=rss.id)
-    results=cursor.execute(sql)
-    old_items=[Item(id=item[0],
-                    rss_id=item[1],
-                    title=item[2],
-                    link=item[3]) 
-                    for item in results]
+        # 与存储在数据库中的item进行比较，查看是否有更新
+        sql='SELECT * FROM items WHERE rss_id={rss_id}'.format(rss_id=rss.id)
+        results=cursor.execute(sql)
+        old_items=[Item(rss_id=item[0],
+                        id=item[1],
+                        title=item[2],
+                        link=item[3]) 
+                        for item in results]
 
-    update_items=[]
-    for new_item in new_items:
-        is_update=True
-        for old_item in old_items:
-            if(old_item.title==new_item.title and old_item.link==new_item.link):
-                is_update=False
-                break
-        if(is_update):
-            update_items.append(new_item)
-    
-    if(len(update_items)>=1):
-        for item in update_items:
-            sql='INSERT INTO items (rss_id,title,link) VALUES({rss_id},"{title}","{link}");'.format(
-                rss_id=item.rss_id,
-                title=item.title,
-                link=item.link
-            )
-            cursor.execute(sql)
-        coonect.commit()
-        if(mode=='update'):
-            bots = get_bots()
-            bot=None
-            for id in bots.keys():
-                bot=bots[id]
-            subscribres=cursor.execute('SELECT * FROM subscribe WHERE rss_id={rss_id}'.format(rss_id=rss.id))
-            for update in update_items:
-                for subscribre in subscribres:
-                    reply=msg.at(user_id=subscribre[1])
-                    reply=reply+'您所订阅的{rss_name}更新了\r\ntitle:{title}\r\nurl:{url}'.format(
-                        rss_name=subscribre[5],
-                        title= update.title,
-                        url=update.link
-                    )
-                    await bot.send_group_msg(group_id=subscribre[2],message=reply)
-            
-    cursor.close()
-    coonect.close()
+        update_items=[]
+        for new_item in new_items:
+            is_update=True
+            for old_item in old_items:
+                if(old_item.title==new_item.title and old_item.link==new_item.link):
+                    is_update=False
+                    break
+            if(is_update):
+                update_items.append(new_item)
+        
+        if(len(update_items)>=1):
+            for item in update_items:
+                sql='INSERT INTO items (rss_id,title,link) VALUES({rss_id},"{title}","{link}");'.format(
+                    rss_id=item.rss_id,
+                    title=item.title.replace('"','""'),
+                    link=item.link
+                )
+                cursor.execute(sql)
+            connect.commit()
+            if(mode=='update'):
+                bots = get_bots()
+                bot=None
+                for id in bots.keys():
+                    bot=bots[id]
+                subscribres=cursor.execute('SELECT * FROM subscribe WHERE rss_id={rss_id}'.format(rss_id=rss.id))
+                for update in update_items:
+                    for subscribre in subscribres:
+                        reply=msg.at(user_id=subscribre[1])
+                        reply=reply+'您所订阅的{rss_name}更新了\r\ntitle:{title}\r\nurl:{url}'.format(
+                            rss_name=subscribre[5],
+                            title= update.title,
+                            url=update.link
+                        )
+                        await bot.send_group_msg(group_id=subscribre[2],message=reply)
+    except Exception as e:
+        raise Exception(e.args[0])
+    finally:
+        cursor.close()
+        connect.close()
 
 
 def get_all_rss():
-    coonect = sqlite3.connect('./db/rss.db')
-    cursor=coonect.cursor()
+    try:
+        connect = sqlite3.connect('./db/rss.db')
+        cursor=connect.cursor()
 
-    sql='SELECT * FROM rss'
-    rss_results=cursor.execute(sql)
-    rss_list=[]
-    for rss in rss_results:
-        rss=Rss(id=rss[0],url=rss[1],activate=rss[2])
-        rss_list.append(rss)
-
-    cursor.close()
-    coonect.close()
-    return rss_list
+        sql='SELECT * FROM rss'
+        rss_results=cursor.execute(sql)
+        rss_list=[]
+        for rss in rss_results:
+            rss=Rss(id=rss[0],url=rss[1],describe=rss[2],activate=rss[3])
+            rss_list.append(rss)
+        return rss_list
+    finally:
+        cursor.close()
+        connect.close()
 
 def rss_server():
     print('rss进程开启！')
     loop=asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-
+    time.sleep(10)
     while True:
         rss_list=get_all_rss()
         if(len(rss_list)>=1):
             try:
-                tasks=[update_rss(rss=rss,mode='update') for rss in rss_list]
-                loop.run_until_complete(asyncio.gather(*tasks))
-                print('成功更新rss')
-                time.sleep(30)
+                tasks=[]
+                for rss in rss_list:
+                    if(rss.activate):
+                        tasks.append(update_rss(rss=rss,mode='update'))
+                if(len(tasks)>0):
+                    loop.run_until_complete(asyncio.gather(*tasks))
+                    print('成功更新rss')
+                    time.sleep(10)
             except Exception as e:
                 print('更新rss错误!info:%s'%e.args[0])
                 time.sleep(1)
@@ -138,7 +146,7 @@ def add_rss(rss:Rss)->str:
                     subscriber_group_id=rss.group_id,
                     subscribe_type=rss.type,
                     rss_id=rss_rows[0][0],
-                    rss_name=rss.name
+                    rss_name=rss.name.replace('"','""')
                 )
             cursor.execute(sql)
             connect.commit()
@@ -147,7 +155,7 @@ def add_rss(rss:Rss)->str:
     # 该源还未被添加，则添加该源
     sql='INSERT INTO rss (rss_url,describe,activate) VALUES ("{rss_url}","{describe}",{activate});'.format(
         rss_url=rss.url,
-        describe=rss.describe,
+        describe=rss.describe.replace('"','""'),
         activate=1
     )
     cursor.execute(sql)
@@ -160,7 +168,7 @@ def add_rss(rss:Rss)->str:
             subscriber_group_id=rss.group_id,
             subscribe_type=rss.type,
             rss_id=rows[0][0],
-            rss_name=rss.name
+            rss_name=rss.name.replace('"','""')
         )
     cursor.execute(sql)
     connect.commit()
@@ -168,6 +176,52 @@ def add_rss(rss:Rss)->str:
     cursor.close()
     connect.close()
     return 'new'
+
+def query_user_rss(user_id:int)->[]:
+    try:
+        connect = sqlite3.connect('./db/rss.db')
+        cursor=connect.cursor()
+
+        sql='SELECT * FROM subscribe WHERE subscriber={subscriber}'.format(
+            subscriber=user_id
+        )
+        results=cursor.execute(sql)
+        results=[result for result in results]
+        return results
+    finally:
+            cursor.close()
+            connect.close()
+
+def remove_rss(subscibe_id,user_id):
+    try:
+        connect = sqlite3.connect('./db/rss.db')
+        cursor=connect.cursor()
+        sql='SELECT * FROM subscribe WHERE ID={id}'.format(
+            id=subscibe_id
+        )
+        results=cursor.execute(sql)
+        results=[result for result in results]
+        rss_id=results[0][4]
+        if(len(results)<=0):
+            return 'none'
+        elif(results[0][1]!=user_id):
+            return 'no_permission'
+        else:
+            sql='DELETE FROM subscribe WHERE ID={id}'.format(id=subscibe_id)
+            cursor.execute(sql)
+            connect.commit()
+            results=cursor.execute('SELECT * FROM subscribe WHERE rss_id={rss_id}'.format(rss_id=rss_id))
+            results=[result for result in results]
+            # 如果删除该条记录使得此rss无用户使用，则将其标为不激活状态
+            if(len(results)<=0):
+                cursor.execute('UPDATE rss SET activate=0 WHERE rss_id={rss_id}'.format(rss_id=rss_id))
+                connect.commit()
+            return 'success'
+    except Exception:
+        raise Exception('删除rss错误！')
+    finally:
+        cursor.close()
+        connect.close()
 
 def rss_db_init():
     if(not os.path.exists('./db')):

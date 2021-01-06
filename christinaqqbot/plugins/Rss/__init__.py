@@ -1,9 +1,10 @@
 from nonebot import on_command
 from nonebot.rule import to_me
-from nonebot.adapters.cqhttp import Bot,Event,MessageSegment
+from nonebot.adapters.cqhttp import Bot,Event
+from nonebot.adapters.cqhttp import MessageSegment as msg
 from nonebot.log import logger
 
-from .util import check_rss,update_rss,rss_db_init,rss_server,add_rss
+from .util import check_rss,update_rss,rss_db_init,rss_server,add_rss,query_user_rss,remove_rss
 from .model import Rss
 
 from christinaqqbot.utils.rule import _gruop_white_list
@@ -18,16 +19,46 @@ RSS=on_command('rss',rule=to_me()&_gruop_white_list)
 @RSS.handle()
 async def _handle(bot: Bot, event: Event, state: dict):
     args_list = str(event.message).strip().split()
-    if(len(args_list)>=2):
-        rss_name,rss_url=args_list[0],args_list[1]
-        rss=Rss(name=rss_name,url=rss_url,user_id=event.user_id,group_id=event.group_id,type='group')
-        des=check_rss(rss.url)
-        if(des==''):
-            await RSS.finish('你所输入的rss源有误！')
+    error_reply='\
+所输入命令有误！现在支持的命令如下：\r\n\
+add:添加一个rss源。/rss add 源名称 源地址\r\n\
+list:查看自己所添加的所有源 /rss list \r\n\
+remove:移除所添加的一个源。/rss remove 订阅源的id'
+    if(len(args_list)>=1):
+        if(args_list[0]=='add' and len(args_list)>=3):
+            rss_name,rss_url=args_list[1],args_list[2]
+            rss=Rss(name=rss_name,url=rss_url,user_id=event.user_id,group_id=event.group_id,type='group')
+            des=check_rss(rss.url)
+            if(des==''):
+                await RSS.finish(msg.reply(id_=event.id)+'你所输入的rss源有误！')
+            else:
+                rss.describe=des
+                add_result = add_rss(rss)
+                if(add_result=='repeat'):
+                    await RSS.finish(msg.reply(id_=event.id)+'你已添加过该源，请勿重复添加！')
+                await update_rss(rss,mode='init')
+                await RSS.finish(msg.reply(id_=event.id)+'RSS {rss_name} 添加成功\r\nrss简介：{describe}'.format(rss_name=rss_name,describe=des))
+        elif(args_list[0]=='list'):
+            results=query_user_rss(user_id=event.user_id)
+            reply='您的订阅:\r\n' if len(results)>0 else '您还没有订阅rss'
+            for result in results:
+                reply+='id:{rss_id} {rss_name}\r\n'.format(
+                    rss_id=result[0],
+                    rss_name=result[5]   
+                )
+            await RSS.finish(msg.reply(id_=event.id)+reply)
+        elif(args_list[0]=='remove' and len(args_list)>=2):
+            try:
+                remove_result=remove_rss(user_id=event.user_id,subscibe_id=int(args_list[1]))
+                if(remove_result=='none'):
+                    await RSS.finish(msg.reply(id_=event.id)+'没有该rss记录，请使用正确的id')
+                elif(remove_result=='no_permission'):
+                    await RSS.finish(msg.reply(id_=event.id)+'你没有该rss记录的权限')
+                elif(remove_result=='success'):
+                    await RSS.finish(msg.reply(id_=event.id)+'删除成功')
+            except Exception as e:
+                await  RSS.finish(msg.reply(id_=event.id)+'error!info:%s'%e.args[0])
         else:
-            rss.describe=des
-            add_rss(rss)
-            await update_rss(rss,mode='init')
-            await RSS.finish('RSS {rss_name} 添加成功\r\nrss简介：{describe}'.format(rss_name=rss_name,describe=des))
+            await RSS.finish(msg.reply(id_=event.id)+error_reply)
     else:
-        await RSS.finish('RSS输入格式有误！\r\n请使用/rss rss名称 rssurl 进行添加')
+        await RSS.finish(msg.reply(id_=event.id)+error_reply)
