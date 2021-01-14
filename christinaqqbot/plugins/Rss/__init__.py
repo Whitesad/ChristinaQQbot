@@ -42,7 +42,7 @@ remove:移除所添加的一个源。/rss remove 订阅源的id'
             results=query_user_rss(user_id=event.user_id)
             reply='您的订阅:\r\n' if len(results)>0 else '您还没有订阅rss'
             for result in results:
-                reply+='id:{rss_id} {rss_name}\r\n{rss_url}'.format(
+                reply+='id:{rss_id} {rss_name}\r\n{rss_url}\r\n'.format(
                     rss_id=result[0],
                     rss_name=result[5],
                     rss_url=result[-1]
