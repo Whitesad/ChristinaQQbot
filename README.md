@@ -19,7 +19,7 @@ todo list
 - [ ] 功能索引模块
 - [ ] 插件配置化
 - [ ] rss添加私发功能
-- [ ] rss查询本人订阅列表
+- [x] rss查询本人订阅列表
 
 Requirements
 

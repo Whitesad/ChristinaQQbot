@@ -187,6 +187,15 @@ def query_user_rss(user_id:int)->[]:
         )
         results=cursor.execute(sql)
         results=[result for result in results]
+        for i in range(len(results)):
+            sql='SELECT * FROM rss WHERE rss_id={rss_id};'.format(rss_id=results[i][4])
+            rss=cursor.execute(sql)
+            rss=[r for r in rss]
+            result=results[i]
+            result=[r for r in result]
+            result.append(rss[0][1])
+            results[i]=result
+
         return results
     finally:
             cursor.close()
@@ -218,7 +227,7 @@ def remove_rss(subscibe_id,user_id):
                 connect.commit()
             return 'success'
     except Exception:
-        raise Exception('删除rss错误！')
+        return 'error'
     finally:
         cursor.close()
         connect.close()
