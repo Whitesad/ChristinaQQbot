@@ -23,7 +23,7 @@ nonebot.load_builtin_plugins()
 nonebot.load_plugin("christinaqqbot.plugins.pixiv")
 nonebot.load_plugin("christinaqqbot.plugins.poke")
 nonebot.load_plugin("christinaqqbot.plugins.waifu")
-# nonebot.load_plugin("christinaqqbot.plugins.Rss")
+nonebot.load_plugin("christinaqqbot.plugins.Rss")
 
 # Modify some config / config depends on loaded configs
 # 

@@ -108,6 +108,7 @@ def rss_server():
     asyncio.set_event_loop(loop)
     time.sleep(10)
     while True:
+        time.sleep(1)
         rss_list=get_all_rss()
         if(len(rss_list)>=1):
             try:
