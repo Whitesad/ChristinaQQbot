@@ -13,6 +13,9 @@ import asyncio
 import threading
 import time
 import platform
+import feedparser
+import re
+from bs4 import BeautifulSoup
 
 from christinaqqbot.utils.reply import *
 from christinaqqbot.utils.rule import  _gruop_white_list
@@ -23,37 +26,29 @@ api_url='https://api.imjad.cn/pixiv/v2/'
 setu_tags=['萝莉','黑丝','白丝','魅魔','吸血鬼','白毛','FGO','arknights','原神','碧蓝航线','百合','红瞳','舰队Collection','JK']
 api_url='https://pix.ipv4.host/illustrations'
 def get_setu(tag='random')->dict:
-    page=random.randint(1,6)
     if(tag=='random'):
         tag=get_random_reply(setu_tags)
-        page=random.randint(1,21)
-    para={
-        'keyword':tag,
-        'pageSize':'20',
-        'searchType':'origin',
-        'illustType':'illust',
-        'page':str(page)
-    }
     try:
-        r=requests.get(url=api_url,params=para)
+        api_url='http://www.rsshub.whitesad.xyz/pixiv/search/{tag}/popular/0'.format(tag=tag)
+        r=requests.get(url=api_url)
+        r=feedparser.parse(r.text)
     except Exception:
         raise Exception("setu api访问错误！\r\n你的涩图炸了，你可以尝试再来一张。")
     
-    result_dict=json.loads(r.text)
-    if('data' in result_dict.keys()):
-        result=result_dict['data'][random.randint(0,len(result_dict['data']))]
+    if(len(r['entries'])>0):
+        result=r['entries'][random.randint(0,len(r['entries']))]
+        image_url=re.findall(r'["](.*?)["]',result['summary'])[0]
         return {
             'title':result['title'],
-            'id':result['id'],
-            'artistId':result['artistId'],
-            'urls':result['imageUrls'][0]
+            'id':result['id'].split('/')[-1], #取ID
+            'author':result['author'],
+            'url':image_url
         }
     else:
         return None
 
 
-def save_setu(id):
-    pic_url='https://pixiv.cat/%s.jpg'%id
+def save_setu(pic_url):
     try:
         r=requests.get(url=pic_url)
         if(r.status_code==404):
@@ -96,7 +91,7 @@ def setu_thread(bot:Bot,event:Event,args:dict):
         else:
             # 储存setu到本地
             save_time=time.time()
-            pic_name=save_setu(setu['id'])
+            pic_name=save_setu(setu['url'])
             save_time=time.time()-save_time
 
             try:
