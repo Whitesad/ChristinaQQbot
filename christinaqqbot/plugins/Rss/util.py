@@ -83,6 +83,7 @@ async def update_rss(rss:Rss,mode='init'):
                         )
                         await bot.send_group_msg(group_id=subscribre[2],message=reply)
     except Exception as e:
+        print('rss {name}更新失败!'.format(name=rss.name))
         raise Exception(e.args[0])
     finally:
         cursor.close()
@@ -98,7 +99,9 @@ def get_all_rss():
         rss_results=cursor.execute(sql)
         rss_list=[]
         for rss in rss_results:
-            rss=Rss(id=rss[0],url=rss[1],describe=rss[2],activate=rss[3])
+            rss_info=cursor.execute('SELECT * FROM subscribe WHERE ID={id}'.format(id=rss[0]))
+            rss_info=[info for info in rss_info][0]
+            rss=Rss(id=rss[0],url=rss[1],describe=rss[2],activate=rss[3],name=rss_info[5])
             rss_list.append(rss)
         return rss_list
     finally:
