@@ -36,7 +36,7 @@ def get_setu(tag='random')->dict:
         raise Exception("setu api访问错误！\r\n你的涩图炸了，你可以尝试再来一张。")
     
     if(len(r['entries'])>0):
-        result=r['entries'][random.randint(0,len(r['entries']))]
+        result=r['entries'][random.randint(0,len(r['entries'])-1)]
         image_url=re.findall(r'["](.*?)["]',result['summary'])[0]
         return {
             'title':result['title'],
