@@ -99,7 +99,7 @@ def get_all_rss():
         rss_results=cursor.execute(sql)
         rss_list=[]
         for rss in rss_results:
-            rss_info=cursor.execute('SELECT * FROM subscribe WHERE ID={id}'.format(id=rss[0]))
+            rss_info=cursor.execute('SELECT * FROM subscribe WHERE rss_id={id}'.format(id=rss[0]))
             rss_info=[info for info in rss_info][0]
             rss=Rss(id=rss[0],url=rss[1],describe=rss[2],activate=rss[3],name=rss_info[5])
             rss_list.append(rss)
