@@ -97,12 +97,14 @@ def get_all_rss():
 
         sql='SELECT * FROM rss'
         rss_results=cursor.execute(sql)
+        rss_results=[result for result in rss_results]
         rss_list=[]
         for rss in rss_results:
-            rss_info=cursor.execute('SELECT * FROM subscribe WHERE rss_id={id}'.format(id=rss[0]))
-            rss_info=[info for info in rss_info][0]
-            rss=Rss(id=rss[0],url=rss[1],describe=rss[2],activate=rss[3],name=rss_info[5])
-            rss_list.append(rss)
+            if(rss[3]):#如果是激活的rss
+                rss_info=cursor.execute('SELECT * FROM subscribe WHERE rss_id={id}'.format(id=rss[0]))
+                rss_info=[info for info in rss_info][0]
+                rss=Rss(id=rss[0],url=rss[1],describe=rss[2],activate=rss[3],name=rss_info[5])
+                rss_list.append(rss)
         return rss_list
     finally:
         cursor.close()
@@ -155,6 +157,10 @@ def add_rss(rss:Rss)->str:
                     rss_id=rss_rows[0][0],
                     rss_name=rss.name.replace('"','""')
                 )
+            cursor.execute(sql)
+            connect.commit()
+            # 标记该rss激活
+            sql='UPDATE rss SET activate = 1 WHERE rss_id={rss_id}'.format(rss_id=rss_rows[0][0])
             cursor.execute(sql)
             connect.commit()
             return 'exist'
