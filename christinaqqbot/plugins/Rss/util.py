@@ -7,12 +7,14 @@ import os
 import feedparser
 import asyncio
 import time
+import requests
 
 from .model import Rss,Item
 
 def check_rss(rss_url:str)->str:
     try:
-        r=feedparser.parse(rss_url)
+        r=requests.get(rss_url)
+        r=feedparser.parse(r.text)
         if('entries' in r.keys()):
             return r['feed']['subtitle']
         else:
@@ -28,8 +30,9 @@ async def update_rss(rss:Rss,mode='init'):
             results=cursor.execute('SELECT * FROM rss WHERE rss_url="{rss_url}"'.format(rss_url=rss.url))
             results=[result for result in results]
             rss.id=results[0][0]
-
-        r=feedparser.parse(rss.url)
+        
+        r=requests.get(rss.url)
+        r=feedparser.parse(r.text)
         new_items=[Item(rss_id=rss.id,
                         title=item['title'],
                         link=item['link']
