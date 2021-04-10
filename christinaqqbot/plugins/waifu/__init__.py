@@ -28,7 +28,7 @@ def save_pic(pic_url):
 @waifu.handle()
 async def _(bot: Bot, event: Event, state: dict)->None:
     waifu_url='https://www.thiswaifudoesnotexist.net/example-'+str(random.randint(0,100000))+'.jpg'
-    reply=MessageSegment.reply(id_=event.id)
+    reply=MessageSegment.reply(id_=event.message_id)
     try:
         pic_name=save_pic(waifu_url)
         try:

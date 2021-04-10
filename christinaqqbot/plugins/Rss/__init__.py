@@ -30,14 +30,14 @@ remove:移除所添加的一个源。/rss remove 订阅源的id'
             rss=Rss(name=rss_name,url=rss_url,user_id=event.user_id,group_id=event.group_id,type='group')
             des=check_rss(rss.url)
             if(des==''):
-                await RSS.finish(msg.reply(id_=event.id)+'你所输入的rss源有误！')
+                await RSS.finish(msg.reply(id_=event.message_id)+'你所输入的rss源有误！')
             else:
                 rss.describe=des
                 add_result = add_rss(rss)
                 if(add_result=='repeat'):
-                    await RSS.finish(msg.reply(id_=event.id)+'你已添加过该源，请勿重复添加！')
+                    await RSS.finish(msg.reply(id_=event.message_id)+'你已添加过该源，请勿重复添加！')
                 await update_rss(rss,mode='init')
-                await RSS.finish(msg.reply(id_=event.id)+'RSS {rss_name} 添加成功\r\nrss简介：{describe}'.format(rss_name=rss_name,describe=des))
+                await RSS.finish(msg.reply(id_=event.message_id)+'RSS {rss_name} 添加成功\r\nrss简介：{describe}'.format(rss_name=rss_name,describe=des))
         elif(args_list[0]=='list'):
             results=query_user_rss(user_id=event.user_id)
             reply='您的订阅:\r\n' if len(results)>0 else '您还没有订阅rss'
@@ -47,18 +47,18 @@ remove:移除所添加的一个源。/rss remove 订阅源的id'
                     rss_name=result[5],
                     rss_url=result[-1]
                 )
-            await RSS.finish(msg.reply(id_=event.id)+reply)
+            await RSS.finish(msg.reply(id_=event.message_id)+reply)
         elif(args_list[0]=='remove' and len(args_list)>=2):
             remove_result=remove_rss(user_id=event.user_id,subscibe_id=int(args_list[1]))
             if(remove_result=='none'):
-                await RSS.finish(msg.reply(id_=event.id)+'没有该rss记录，请使用正确的id')
+                await RSS.finish(msg.reply(id_=event.message_id)+'没有该rss记录，请使用正确的id')
             elif(remove_result=='no_permission'):
-                await RSS.finish(msg.reply(id_=event.id)+'你没有该rss记录的权限')
+                await RSS.finish(msg.reply(id_=event.message_id)+'你没有该rss记录的权限')
             elif(remove_result=='success'):
-                await RSS.finish(msg.reply(id_=event.id)+'删除成功')
+                await RSS.finish(msg.reply(id_=event.message_id)+'删除成功')
             elif(remove_result=='error'):
-                await RSS.finish(msg.reply(id_=event.id)+'删除错误!')
+                await RSS.finish(msg.reply(id_=event.message_id)+'删除错误!')
         else:
-            await RSS.finish(msg.reply(id_=event.id)+error_reply)
+            await RSS.finish(msg.reply(id_=event.message_id)+error_reply)
     else:
-        await RSS.finish(msg.reply(id_=event.id)+error_reply)
+        await RSS.finish(msg.reply(id_=event.message_id)+error_reply)

@@ -103,7 +103,7 @@ def save_setu(pic_url):
 
 def send_2_setu(bot:Bot,event:Event,args:dict,setu:dict):
     if(setu==None):
-        None_reply=msg.reply(id_=event.id)+'淦哦老兄，你的xp真**怪！建议重新搜或者换个xp！'
+        None_reply=msg.reply(id_=event.message_id)+'淦哦老兄，你的xp真**怪！建议重新搜或者换个xp！'
         try:
             asyncio.run(bot.send_msg(group_id=event.group_id,message=None_reply))
         except Exception:
@@ -130,7 +130,7 @@ def send_2_setu(bot:Bot,event:Event,args:dict,setu:dict):
                 except Exception:
                     raise Exception('发送xml涩图消息失败！')
             elif(args['mode']=='pic'):
-                setu_reply=msg.reply(id_=event.id)+msg.image(file='file:///'+pic_file)+pic_id+'\r\n'+pic_tag
+                setu_reply=msg.reply(id_=event.message_id)+msg.image(file='file:///'+pic_file)+pic_id+'\r\n'+pic_tag
                 try:
                     asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
                 except Exception:
@@ -141,7 +141,8 @@ def send_2_setu(bot:Bot,event:Event,args:dict,setu:dict):
 def send_3_setu(bot:Bot,event:Event,args:dict,setu:dict):
     # 储存setu到本地
     pic_name=save_setu(setu['url'])
-
+    loop=asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
         if sys == "Windows":
             pic_file=os.getcwd()+'\pic\\'+pic_name
@@ -155,7 +156,7 @@ def send_3_setu(bot:Bot,event:Event,args:dict,setu:dict):
             except Exception:
                 raise Exception('发送xml涩图消息失败！')
         elif(args['mode']=='pic'):
-            setu_reply=msg.reply(id_=event.id)+msg.image(file='file:///'+pic_file)
+            setu_reply=msg.reply(id_=event.message_id)+msg.image(file='file:///'+pic_file)
             try:
                 asyncio.run(bot.send_msg(group_id=event.group_id,message=setu_reply))
             except Exception:
@@ -175,7 +176,7 @@ def setu_thread(bot:Bot,event:Event,args:dict):
         setu=get_setu(tag=args['key_word'],type=args['type'])
         send_setu(bot,event,args,setu,args['type'])
     except Exception as e:
-        error_reply=msg.reply(id_=event.id)+'info:{}'.format(e.args[0])
+        error_reply=msg.reply(id_=event.message_id)+'info:{}'.format(e.args[0])
         asyncio.run(bot.send_msg(group_id=event.group_id,message=error_reply))
 
 pixiv=on_command('setu',rule=to_me()&_gruop_white_list)
@@ -191,31 +192,30 @@ async def handle_setu(bot: Bot, event: Event, state: dict):
     }
     for arg in args_list:
         if(arg[:1]=='-'and arg not in opt):
-            await pixiv.finish(msg.reply(id_=event.id)+'你输入的{}有误，请输入--help获得命令帮助'.format(arg))
+            await pixiv.finish(msg.reply(id_=event.message_id)+'你输入的{}有误，请输入--help获得命令帮助'.format(arg))
     if('--debug'in args_list):
         args['debug']=True
     if('--help'in args_list):
-        await  pixiv.finish(msg.reply(id_=event.id)+'-m:设置回复模式，xml/pic\r\n-s:搜索关键词，置空则为随机\r\n--debug:开启debug模式，打印更多信息')
+        await  pixiv.finish(msg.reply(id_=event.message_id)+'-m:设置回复模式，xml/pic\r\n-s:搜索关键词，置空则为随机\r\n--debug:开启debug模式，打印更多信息')
 
     if('-s'in args_list):
         if(args_list.index('-s')!=len(args_list)-1):
             if(args_list[args_list.index('-s')+1]not in opt):
                 args['key_word']=args_list[args_list.index('-s')+1]
             else:
-                await  pixiv.finish(msg.reply(id_=event.id)+'你所输入的-s搜索参数有误！搜索参数应该为不带空格的单词，语言不定。')
+                await  pixiv.finish(msg.reply(id_=event.message_id)+'你所输入的-s搜索参数有误！搜索参数应该为不带空格的单词，语言不定。')
         else:
-            await  pixiv.finish(msg.reply(id_=event.id)+'你所输入的-s搜索参数有误！搜索参数应该为不带空格的单词，语言不定。')
+            await  pixiv.finish(msg.reply(id_=event.message_id)+'你所输入的-s搜索参数有误！搜索参数应该为不带空格的单词，语言不定。')
     if('-m'in args_list):
         if(args_list.index('-m')!=len(args_list)-1):
             if(args_list[args_list.index('-m')+1] in ['xml','pic','3']):
                 args['mode']=args_list[args_list.index('-m')+1]            
             else:
-                await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送\r\npic:以小图形式发送，默认选项\r\n")
+                await pixiv.finish(msg.reply(id_=event.message_id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送\r\npic:以小图形式发送，默认选项\r\n")
         else:
-            await pixiv.finish(msg.reply(id_=event.id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送\r\npic:以小图形式发送，默认选项")
+            await pixiv.finish(msg.reply(id_=event.message_id)+"你所输入的-m显示参数有误！\r\nxml:以xml大图发送\r\npic:以小图形式发送，默认选项")
     if('-3' in args_list):
         args['type']=3
 
-    await pixiv.send(msg.reply(id_=event.id)+"你的涩图正在处理，依据关键词{}".format(args['key_word']))
+    await pixiv.send(msg.reply(id_=event.message_id)+"你的涩图正在处理，依据关键词{}".format(args['key_word']))
     threading.Thread(target=setu_thread,args=(bot,event,args)).start()
-
