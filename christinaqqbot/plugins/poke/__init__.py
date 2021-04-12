@@ -46,7 +46,7 @@ reply=[
 poke = on_notice()
 @poke.handle()
 async def _poke(bot: Bot, event: Event, state: dict) -> None:
-    if(event.detail_type=='notify'and event.raw_event['target_id']==event.raw_event['self_id']):
+    if(event.notice_type=='notify'and event.target_id==event.self_id):
         files=os.listdir('./voice')
         voice_name=get_random_reply(files)
 
