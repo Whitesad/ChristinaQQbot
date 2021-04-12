@@ -119,7 +119,7 @@ async def parse_args(pixiv:Matcher, event: Event,message:str)->dict:
     if('--debug'in args_list):
         args['debug']=True
     if('--help'in args_list):
-        await  pixiv.finish(msg.reply(id_=event.message_id)+'-m:设置回复模式，xml/pic\r\n-s:搜索关键词，置空则为随机\r\n--debug:开启debug模式，打印更多信息')
+        await  pixiv.finish(msg.reply(id_=event.message_id)+'-m:设置回复模式，xml/pic\r\n-s:搜索关键词，置空则为随机\r\n--debug:开启debug模式，打印更多信息\r\n-2/-3::搜索2次元涩图或者三次元涩图')
 
     if('-s'in args_list):
         if(args_list.index('-s')!=len(args_list)-1):

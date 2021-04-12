@@ -26,6 +26,7 @@ Requirements
 ```sh
 #此选项会安装最新的nonebot2,开发环境为2.0.0a13.post1 go-cqhttpv1.0.0-beta3
 pip install nb-cli
+pip install nonebot-adapter-cqhttp
 pip install requests Beautifulsoup4 lxml feedparser
 ```
 
