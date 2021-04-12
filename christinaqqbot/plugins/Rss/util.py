@@ -81,14 +81,16 @@ async def update_rss(rss:Rss,mode='init'):
                             title= update.title,
                             url=update.link
                         )
-                        await bot.send_group_msg(group_id=subscribre[2],message=reply)
+                        try:
+                            await bot.send_group_msg(group_id=subscribre[2],message=reply)
+                        except Exception:
+                            raise Exception('发送rss更新失败！')
     except Exception as e:
         print('rss {name}更新失败!'.format(name=rss.name))
         raise Exception(e.args[0])
     finally:
         cursor.close()
         connect.close()
-
 
 def get_all_rss():
     try:
