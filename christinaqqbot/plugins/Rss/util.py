@@ -22,6 +22,9 @@ def check_rss(rss_url:str)->str:
     except Exception:
         return ''
 
+async def update_all_rss(tasks):
+    await asyncio.gather(*tasks)
+
 async def update_rss(rss:Rss,mode='init'):
     try:
         connect = sqlite3.connect('./db/rss.db')
@@ -114,8 +117,6 @@ def get_all_rss():
 
 def rss_server():
     print('rss进程开启！')
-    loop=asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     time.sleep(10)
     while True:
         time.sleep(1)
@@ -127,9 +128,9 @@ def rss_server():
                     if(rss.activate):
                         tasks.append(update_rss(rss=rss,mode='update'))
                 if(len(tasks)>0):
-                    loop.run_until_complete(asyncio.gather(*tasks))
+                    asyncio.run(update_all_rss(tasks))
                     print('成功更新rss')
-                    time.sleep(10)
+                    time.sleep(20)
             except Exception as e:
                 print('更新rss错误!info:%s'%e.args[0])
                 time.sleep(1)
@@ -192,7 +193,7 @@ def add_rss(rss:Rss)->str:
     connect.close()
     return 'new'
 
-def query_user_rss(user_id:int)->[]:
+def query_user_rss(user_id:int):
     try:
         connect = sqlite3.connect('./db/rss.db')
         cursor=connect.cursor()
