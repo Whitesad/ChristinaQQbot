@@ -1,6 +1,6 @@
 __pycache__
 *.pyc
-.env*
+.env.dev
 test.py
 pic/*
 db/*

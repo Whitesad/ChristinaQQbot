@@ -8,14 +8,17 @@ import random
 import requests
 import platform
 import os
-import time
+import time,datetime
 
+
+import nonebot
 from nonebot.adapters.cqhttp import Bot,Event
 from nonebot.adapters.cqhttp import MessageSegment as msg
 from nonebot.matcher import Matcher
 from nonebot import get_bots
 
 from christinaqqbot.utils.reply import get_random_reply
+from christinaqqbot.utils.time import get_beijing_time
 from .model import setu
 
 
@@ -115,31 +118,58 @@ async def send_daily_setu(group_id:int,bot:Bot,setu_list:list):
         message='[CQ:image,file={file}]'.format(file='file:///'+setu.pic_file)
         tasks.append(bot.send_group_msg(group_id=group_id,message=message))
     await asyncio.gather(*tasks)
+    time.sleep(2)
+    await bot.send_group_msg(group_id=group_id,message='今日份涩图已准备好，美好的一天从看涩图开始！')
 
 def daily_setu():
-    try:
-        time.sleep(5)
-        setu_list=get_daily_setu()
-        if(len(setu_list)==0):
+    time.sleep(5)
+    prepare_time = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '6:50', '%Y-%m-%d%H:%M')
+    send_time=datetime.datetime.strptime(str(datetime.datetime.now().date()) + '7:00', '%Y-%m-%d%H:%M')
+
+    while True:
+        try:
+            now_time=get_beijing_time()
+            # 达到时间，开始准备涩图
+            if(prepare_time<now_time<send_time):
+                try:
+                    setu_list=get_daily_setu()
+                    if(len(setu_list)==0):
+                        # 出现任何异常则跳过准备时间的十分钟
+                        time.sleep(660)
+                        raise Exception('今日排行版没有符合条件的涩图')
+                        # 访问涩图排行版正确，但是没有符合条件的涩图
+                    for setu in setu_list:
+                        setu.pic_file=save_setu(setu.url)
+
+                    bots = get_bots()
+                    bot=None
+                    for id in bots.keys():
+                        bot=bots[id]
+
+                    # 获得开启日常涩图功能的群号
+                    daily_setu_group=nonebot.get_driver().config.daily_setu
+                    while True:
+                        try:
+                            now_time=get_beijing_time()
+                            # 达到发送时间，发送
+                            if(now_time>send_time):
+                                for group in daily_setu_group.keys():
+                                    asyncio.run(send_daily_setu(daily_setu_group[group],bot,setu_list))
+                                break
+                            time.sleep(1)
+                        except Exception as e:
+                            pass
+                        
+                except Exception as e:
+                    pass
+                finally:
+                    for setu in setu_list:
+                        os.remove(setu.pic_file)
+                # delete pic
+        except Exception:
             pass
-            # 访问涩图排行版正确，但是没有符合条件的涩图
-        for setu in setu_list:
-            setu.pic_file=save_setu(setu.url)
-
-        bots = get_bots()
-        bot=None
-        for id in bots.keys():
-            bot=bots[id]
-
-        daily_setu_group=['965768002']
-        for group_id in daily_setu_group:
-            asyncio.run(send_daily_setu(group_id,bot,setu_list))
-            
-    except Exception as e:
-        pass
-    finally:
-        pass
-    # delete pic
+        
+        time.sleep(1)
 
     
 
