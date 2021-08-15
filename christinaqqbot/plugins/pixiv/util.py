@@ -1,3 +1,5 @@
+from asyncio import tasks
+import asyncio
 from bs4 import BeautifulSoup
 import urllib.request
 import feedparser
@@ -6,10 +8,12 @@ import random
 import requests
 import platform
 import os
+import time
 
 from nonebot.adapters.cqhttp import Bot,Event
 from nonebot.adapters.cqhttp import MessageSegment as msg
 from nonebot.matcher import Matcher
+from nonebot import get_bots
 
 from christinaqqbot.utils.reply import get_random_reply
 from .model import setu
@@ -103,6 +107,73 @@ def save_setu(pic_url):
     elif sys == "Linux":
         pic_file=os.getcwd()+'/pic/'+pic_name
     return pic_file
+
+async def send_daily_setu(group_id:int,bot:Bot,setu_list:list):
+    # await bot.send_group_msg(group_id=group_id,message='test')
+    tasks=[]
+    for setu in setu_list:
+        message='[CQ:image,file={file}]'.format(file='file:///'+setu.pic_file)
+        tasks.append(bot.send_group_msg(group_id=group_id,message=message))
+    await asyncio.gather(*tasks)
+
+def daily_setu():
+    try:
+        time.sleep(5)
+        setu_list=get_daily_setu()
+        if(len(setu_list)==0):
+            pass
+            # 访问涩图排行版正确，但是没有符合条件的涩图
+        for setu in setu_list:
+            setu.pic_file=save_setu(setu.url)
+
+        bots = get_bots()
+        bot=None
+        for id in bots.keys():
+            bot=bots[id]
+
+        daily_setu_group=['965768002']
+        for group_id in daily_setu_group:
+            asyncio.run(send_daily_setu(group_id,bot,setu_list))
+            
+    except Exception as e:
+        pass
+    finally:
+        pass
+    # delete pic
+
+    
+
+def get_daily_setu():
+    setu_list=[]
+    try:
+        api_url='http://www.rsshub.whitesad.xyz/pixiv/ranking/day/'
+        r=requests.get(url=api_url)
+        r=feedparser.parse(r.text)
+        results=[]
+        for entry in r['entries']:
+            rank=int(entry['title'].split()[0][1:])
+            results.append([rank,entry])
+        results=sorted(results,key=lambda result: result[0])
+        if(len(results)>0):
+            for result in results:
+                image_url=re.findall(r'["](.*?)["]',result[1]['summary'])[0]
+                if(image_url[-6:-5]=='-'):
+                    continue
+                setu_list.append(
+                    setu(
+                    url=image_url,
+                    type=2,
+                    info={
+                        'title':result[1]['title'],
+                        'id':result[1]['id'].split('/')[-1], #取ID
+                        'author':result[1]['author'],
+                        'tag':'daily rank'
+                })
+                )
+    except Exception:
+        raise Exception('获取当日涩图排行榜错误！')
+    finally:
+        return setu_list[:10]
 
 async def parse_args(pixiv:Matcher, event: Event,message:str)->dict:
     args_list = message.strip().split()

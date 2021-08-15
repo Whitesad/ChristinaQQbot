@@ -6,16 +6,19 @@ from nonebot.adapters.cqhttp import Bot,Event
 from nonebot.adapters.cqhttp import MessageSegment as msg
 
 import os
+import threading
 
 from christinaqqbot.utils.reply import *
 from christinaqqbot.utils.rule import  _gruop_white_list
 
 from .model import setu
-from .util import get_setu
+from .util import daily_setu, get_setu
 from .util import parse_args
 from .util import save_setu
 
 pixiv=on_command('setu',rule=to_me()&_gruop_white_list)
+
+threading.Thread(target=daily_setu).start()
 
 @pixiv.handle()
 async def handle_setu(bot: Bot, event: Event, state: dict):
