@@ -8,6 +8,7 @@
 - [x] GAN图像生成
 - [x] 戳一戳发送语音
 - [x] rss订阅
+- [x] mcping，显示mc服务器信息
 
 todo list
 
