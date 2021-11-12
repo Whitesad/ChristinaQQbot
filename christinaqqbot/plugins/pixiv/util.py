@@ -23,11 +23,14 @@ from .model import setu
 
 
 setu_tags=['萝莉','黑丝','白丝','魅魔','吸血鬼','白毛','arknights','原神','碧蓝航线','百合','红瞳','舰队Collection','JK','巨乳']
+
+setu_api=nonebot.get_driver().config.setu_api
+
 def get_2_setu(tag='random')->setu:
     if(tag=='random'):
         tag=get_random_reply(setu_tags)
     try:
-        api_url='http://www.rsshub.whitesad.xyz/pixiv/search/{tag}/popular/0'.format(tag=tag)
+        api_url=setu_api+'/pixiv/search/{tag}/popular/0'.format(tag=tag)
         r=requests.get(url=api_url)
         r=feedparser.parse(r.text)
     except Exception:
@@ -51,7 +54,7 @@ def get_2_setu(tag='random')->setu:
 
 def get_3_setu()->setu:
     try:
-        api_url='http://www.rsshub.whitesad.xyz/95mm/tab/%E7%83%AD%E9%97%A8'
+        api_url=setu_api+'/95mm/tab/%E7%83%AD%E9%97%A8'
         r=requests.get(url=api_url)
         r=feedparser.parse(r.text)
     except Exception:
@@ -176,7 +179,7 @@ def daily_setu():
 def get_daily_setu():
     setu_list=[]
     try:
-        api_url='http://www.rsshub.whitesad.xyz/pixiv/ranking/day/'
+        api_url=setu_api+'/pixiv/ranking/day/'
         r=requests.get(url=api_url)
         r=feedparser.parse(r.text)
         results=[]
