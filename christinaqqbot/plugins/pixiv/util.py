@@ -166,7 +166,12 @@ def daily_setu():
                             pass
                         
                 except Exception as e:
-                    pass
+                    bots = get_bots()
+                    bot=None
+                    for id in bots.keys():
+                        bot=bots[id]
+                    for group in daily_setu_group.keys():
+                        asyncio.run(bot.send_group_msg(group_id=daily_setu_group[group],message=str(e.args)))
                 finally:
                     for setu in setu_list:
                         os.remove(setu.pic_file)
