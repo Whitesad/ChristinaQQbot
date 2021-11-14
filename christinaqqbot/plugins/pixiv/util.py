@@ -123,11 +123,12 @@ async def send_daily_setu(group_id:int,bot:Bot,setu_list:list):
     await asyncio.gather(*tasks)
     time.sleep(2)
     await bot.send_group_msg(group_id=group_id,message='今日份涩图已准备好，美好的一天从看涩图开始！')
+    return
 
 def daily_setu():
     time.sleep(5)
     prepare_time = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '6:50', '%Y-%m-%d%H:%M')
-    send_time=datetime.datetime.strptime(str(datetime.datetime.now().date()) + '7:00', '%Y-%m-%d%H:%M')
+    send_time=datetime.datetime.strptime(str(datetime.datetime.now().date()) + '21:36', '%Y-%m-%d%H:%M')
 
     while True:
         try:
@@ -169,8 +170,8 @@ def daily_setu():
                     for setu in setu_list:
                         os.remove(setu.pic_file)
                 # delete pic
-        except Exception:
-            pass
+        except Exception as e:
+            print(str(e.args))
         
         time.sleep(1)
 
@@ -179,7 +180,7 @@ def daily_setu():
 def get_daily_setu():
     setu_list=[]
     try:
-        api_url=setu_api+'/pixiv/ranking/day/'
+        api_url=setu_api+'/pixiv/ranking/day_male/'
         r=requests.get(url=api_url)
         r=feedparser.parse(r.text)
         results=[]
@@ -192,6 +193,7 @@ def get_daily_setu():
                 image_url=re.findall(r'["](.*?)["]',result[1]['summary'])[0]
                 if(image_url[-6:-5]=='-'):
                     continue
+                image_url=image_url.replace('.cat','.re')
                 setu_list.append(
                     setu(
                     url=image_url,
