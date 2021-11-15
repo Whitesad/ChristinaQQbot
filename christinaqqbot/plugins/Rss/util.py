@@ -1,6 +1,7 @@
 from nonebot.adapters.cqhttp import Bot
 from nonebot import get_bots
 from nonebot.adapters.cqhttp import MessageSegment as msg
+from nonebot.log import logger
 
 import sqlite3
 import os
@@ -10,6 +11,8 @@ import time
 import requests
 
 from .model import Rss,Item
+
+logger.add('log.log',retention='10 days')
 
 def check_rss(rss_url:str)->str:
     try:
@@ -89,7 +92,7 @@ async def update_rss(rss:Rss,mode='init'):
                         except Exception:
                             raise Exception('发送rss更新失败！')
     except Exception as e:
-        print('rss {name}更新失败!'.format(name=rss.name))
+        logger.error('rss {name}更新失败!'.format(name=rss.name))
         raise Exception(e.args[0])
     finally:
         cursor.close()
@@ -116,7 +119,7 @@ def get_all_rss():
         connect.close()
 
 def rss_server():
-    print('rss进程开启！')
+    logger.success('rss进程开启！')
     time.sleep(10)
     while True:
         time.sleep(1)
@@ -129,10 +132,10 @@ def rss_server():
                         tasks.append(update_rss(rss=rss,mode='update'))
                 if(len(tasks)>0):
                     asyncio.run(update_all_rss(tasks))
-                    print('成功更新rss')
+                    logger.info('成功更新rss')
                     time.sleep(20)
             except Exception as e:
-                print('更新rss错误!info:%s'%e.args[0])
+                logger.info('更新rss错误!info:%s'%e.args[0])
                 time.sleep(1)
 
 def add_rss(rss:Rss)->str:
@@ -277,7 +280,8 @@ def rss_db_init():
             rss_name TEXT NOT NULL
             );
         ''')
-        print('建立subscribe表')
+
+        logger.success('建立subscribe表')
         connect.commit()
     if(not exist_rss):
         # 建立订阅信息表
@@ -290,7 +294,7 @@ def rss_db_init():
             activate BOOLEAN DEFAULT 1
             );
         ''')
-        print('建立rss表')
+        logger.success('建立rss表')
         connect.commit()
     if(not exist_items):
         # 建立订阅信息items表
@@ -303,7 +307,7 @@ def rss_db_init():
             link TEXT NOT NULL
             );
         ''')
-        print('建立items表')
+        logger.success('建立items表')
         connect.commit()
 
     cursor.close()

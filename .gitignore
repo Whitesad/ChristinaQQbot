@@ -7,3 +7,4 @@ db/*
 *.db
 .vscode/*
 *.json
+*.log

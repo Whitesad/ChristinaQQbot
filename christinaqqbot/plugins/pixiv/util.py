@@ -16,11 +16,15 @@ from nonebot.adapters.cqhttp import Bot,Event
 from nonebot.adapters.cqhttp import MessageSegment as msg
 from nonebot.matcher import Matcher
 from nonebot import get_bots
+from nonebot.log import logger
+
 
 from christinaqqbot.utils.reply import get_random_reply
 from christinaqqbot.utils.time import get_beijing_time
 from .model import setu
 
+
+logger.add('log.log',retention='10 days')
 
 setu_tags=['萝莉','黑丝','白丝','魅魔','吸血鬼','白毛','arknights','原神','碧蓝航线','百合','红瞳','舰队Collection','JK','巨乳']
 
@@ -126,10 +130,10 @@ async def send_daily_setu(group_id:int,bot:Bot,setu_list:list):
     return
 
 def daily_setu():
-    print('daily setu进程开启！')
+    logger.success('daily setu进程开启！')
     time.sleep(5)
     prepare_time = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '6:50', '%Y-%m-%d%H:%M')
-    send_time=datetime.datetime.strptime(str(datetime.datetime.now().date()) + '21:36', '%Y-%m-%d%H:%M')
+    send_time=datetime.datetime.strptime(str(datetime.datetime.now().date()) + '7:00', '%Y-%m-%d%H:%M')
 
     while True:
         try:
@@ -137,6 +141,12 @@ def daily_setu():
             # 达到时间，开始准备涩图
             if(prepare_time<now_time<send_time):
                 try:
+                    logger.info('达到时间，开始准备涩图')
+                    bots = get_bots()
+                    bot=None
+                    for id in bots.keys():
+                        bot=bots[id]
+
                     setu_list=get_daily_setu()
                     if(len(setu_list)==0):
                         # 出现任何异常则跳过准备时间的十分钟
@@ -146,10 +156,6 @@ def daily_setu():
                     for setu in setu_list:
                         setu.pic_file=save_setu(setu.url)
 
-                    bots = get_bots()
-                    bot=None
-                    for id in bots.keys():
-                        bot=bots[id]
 
                     # 获得开启日常涩图功能的群号
                     daily_setu_group=nonebot.get_driver().config.daily_setu
@@ -166,18 +172,15 @@ def daily_setu():
                             pass
                         
                 except Exception as e:
-                    bots = get_bots()
-                    bot=None
-                    for id in bots.keys():
-                        bot=bots[id]
                     for group in daily_setu_group.keys():
-                        asyncio.run(bot.send_group_msg(group_id=daily_setu_group[group],message=str(e.args)))
+                        asyncio.run(bot.send_group_msg(group_id=daily_setu_group[group],message=str(e.args[0])))
+                    logger.error(e.args[0])
                 finally:
                     for setu in setu_list:
                         os.remove(setu.pic_file)
                 # delete pic
         except Exception as e:
-            print(str(e.args))
+            logger.error(e.args[0])
         
         time.sleep(1)
 
