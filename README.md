@@ -16,6 +16,7 @@ todo list
 
 - [ ] 可以使用多关键词搜索
 - [x] 三次元涩图搜索
+- [x] 每日定时P站日榜
 - [ ] 以图搜图
 - [ ] 功能索引模块
 - [x] 插件配置化
@@ -25,7 +26,7 @@ todo list
 Requirements
 
 ```sh
-#此选项会安装最新的nonebot2,开发环境为2.0.0a13.post1 go-cqhttpv1.0.0-beta3
+#开发环境为nonebot 2.0.0a13.post1 go-cqhttpv1.0.0-beta3
 pip install nonebot2==2.0.0a13
 pip install nonebot-adapter-cqhttp
 pip install requests Beautifulsoup4 lxml feedparser

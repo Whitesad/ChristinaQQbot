@@ -138,6 +138,7 @@ def daily_setu():
     while True:
         try:
             now_time=get_beijing_time()
+            logger.info('|daily setu|北京时间|{beijing_time}'.format(beijing_time=str(now_time)))
             # 达到时间，开始准备涩图
             if(prepare_time<now_time<send_time):
                 try:
@@ -153,21 +154,24 @@ def daily_setu():
                         time.sleep(660)
                         raise Exception('今日排行版没有符合条件的涩图')
                         # 访问涩图排行版正确，但是没有符合条件的涩图
+                    logger.info('成功获取每日涩图列表！')
                     for setu in setu_list:
                         setu.pic_file=save_setu(setu.url)
-
+                    logger.info('成功缓存每日涩图！')
 
                     # 获得开启日常涩图功能的群号
                     daily_setu_group=nonebot.get_driver().config.daily_setu
                     while True:
                         try:
                             now_time=get_beijing_time()
+                            logger.info('每日涩图等待发送...')
                             # 达到发送时间，发送
                             if(now_time>send_time):
                                 for group in daily_setu_group.keys():
                                     asyncio.run(send_daily_setu(daily_setu_group[group],bot,setu_list))
+                                logger.info('每日涩图发送完成！')
                                 break
-                            time.sleep(1)
+                            time.sleep(30)
                         except Exception as e:
                             pass
                         
@@ -177,12 +181,16 @@ def daily_setu():
                     logger.error(e.args[0])
                 finally:
                     for setu in setu_list:
-                        os.remove(setu.pic_file)
+                        try:
+                            os.remove(setu.pic_file)
+                        except Exception:
+                            pass
+                    logger.info('删除每日涩图成功！')
                 # delete pic
         except Exception as e:
             logger.error(e.args[0])
         
-        time.sleep(1)
+        time.sleep(60)
 
     
 
