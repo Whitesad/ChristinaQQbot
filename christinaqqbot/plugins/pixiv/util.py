@@ -132,13 +132,14 @@ async def send_daily_setu(group_id:int,bot:Bot,setu_list:list):
 def daily_setu():
     logger.success('daily setu进程开启！')
     time.sleep(5)
-    prepare_time = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '6:50', '%Y-%m-%d%H:%M')
-    send_time=datetime.datetime.strptime(str(datetime.datetime.now().date()) + '7:00', '%Y-%m-%d%H:%M')
+    daily_setu_time=nonebot.get_driver().config.daily_setu_time
 
     while True:
         try:
             now_time=get_beijing_time()
-            logger.info('|daily setu|北京时间|{beijing_time}'.format(beijing_time=str(now_time)))
+            send_time=datetime.datetime.strptime(str(now_time.date()) + daily_setu_time, '%Y-%m-%d%H:%M')
+            prepare_time=send_time-datetime.timedelta(minutes=10)
+            logger.info('daily setu | 北京时间|{beijing_time}'.format(beijing_time=str(now_time)))
             # 达到时间，开始准备涩图
             if(prepare_time<now_time<send_time):
                 try:
