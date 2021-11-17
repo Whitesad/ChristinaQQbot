@@ -13,6 +13,7 @@ nonebot.load_plugin("christinaqqbot.plugins.poke")
 nonebot.load_plugin("christinaqqbot.plugins.waifu")
 nonebot.load_plugin("christinaqqbot.plugins.Rss")
 nonebot.load_plugin("christinaqqbot.plugins.mcping")
+nonebot.load_plugin("christinaqqbot.plugins.function_manager")
 
 if __name__ == "__main__":
     nonebot.run(app="bot:app")
